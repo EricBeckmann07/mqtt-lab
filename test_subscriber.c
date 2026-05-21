@@ -17,6 +17,7 @@ static int msg_count = 0;
 
 /* Callback: called when connection is established */
 static void on_connect(struct mosquitto *mosq, void *userdata, int rc) {
+    printf("[subscriber] on_connect callback triggered with rc=%d\n", rc);
     if (rc == 0) {
         printf("[subscriber] Connected to %s:%d\n", BROKER, PORT);
         printf("[subscriber] Subscribing to: %s\n\n", TOPIC);
@@ -53,6 +54,8 @@ static void on_disconnect(struct mosquitto *mosq, void *userdata, int rc) {
 
 int main(void) {
     mosquitto_lib_init();
+
+    printf("[subscriber] Starting MQTT subscriber...\n");
 
     struct mosquitto *mosq = mosquitto_new("mqtt-lab-subscriber", true, NULL);
     if (!mosq) {
