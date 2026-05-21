@@ -64,6 +64,8 @@ int main(void) {
         return 1;
     }
 
+    printf("test 2\n");
+
     mosquitto_connect_callback_set(mosq, on_connect);
     mosquitto_message_callback_set(mosq, on_message);
     mosquitto_disconnect_callback_set(mosq, on_disconnect);
