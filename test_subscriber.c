@@ -64,11 +64,11 @@ int main(void) {
         return 1;
     }
 
-    mosquitto_connect_callback_set(&mosq, on_connect);
-    mosquitto_message_callback_set(&mosq, on_message);
-    mosquitto_disconnect_callback_set(&mosq, on_disconnect);
+    mosquitto_connect_callback_set(mosq, on_connect);
+    mosquitto_message_callback_set(mosq, on_message);
+    mosquitto_disconnect_callback_set(mosq, on_disconnect);
 
-    int rc = mosquitto_connect(&mosq, BROKER, PORT, 60);
+    int rc = mosquitto_connect(mosq, BROKER, PORT, 60);
     if (rc != MOSQ_ERR_SUCCESS) {
         fprintf(stderr, "[subscriber] Could not connect: %s\n",
                 mosquitto_strerror(rc));
