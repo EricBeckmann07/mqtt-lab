@@ -70,7 +70,10 @@ int main(void) {
     mosquitto_message_callback_set(mosq, on_message);
     mosquitto_disconnect_callback_set(mosq, on_disconnect);
 
+    printf("test 3\n");
+
     int rc = mosquitto_connect(mosq, BROKER, PORT, 60);
+    printf("test 4\n");
     if (rc != MOSQ_ERR_SUCCESS) {
         fprintf(stderr, "[subscriber] Could not connect: %s\n",
                 mosquitto_strerror(rc));
