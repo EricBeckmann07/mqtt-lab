@@ -1,9 +1,3 @@
-/*
- * test_publisher.c
- * Connects to the public test broker and publishes 5 simulated sensor readings.
- * Usage: ./test_publisher
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,30 +7,41 @@
 
 #define BROKER      "127.0.0.1"
 #define PORT        1883
-#define TOPIC       "mqtt-lab/test/sensor"
-#define MSG_COUNT   5
+#define TOPIC       "campus/S1/environment"
+#define MSG_COUNT   1
 #define INTERVAL_S  2
 
-/* Generate a simple JSON payload with dummy sensor data */
-static void build_payload(char *buf, size_t len, int seq) {
-    time_t now = time(NULL);
-    struct tm *t = gmtime(&now);
-    char ts[30];
-    strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%SZ", t);
+struct wetterdaten {
+    int message_id;
+    char timestamp[30];
+    char station_id[10];
+    float temperature_c;
+    float humidity_pct;
+};
 
-    /* Simple simulated values */
-    float temp     = 18.0f + (float)(rand() % 100) / 20.0f;   /* 18.0 – 23.0 */
-    float humidity = 50.0f + (float)(rand() % 300) / 10.0f;   /* 50.0 – 80.0 */
+struct wetterdaten data1 = {
+    .message_id = 1,
+    .timestamp = "2024-06-01 12:00:00",
+    .station_id = "S1",
+    .temperature_c = 22.5,
+    .humidity_pct = 55.0
+};
 
-    snprintf(buf, len,
-        "{\"seq\":%d,\"station_id\":\"S1\","
-        "\"timestamp\":\"%s\","
-        "\"temperature_c\":%.1f,"
-        "\"humidity_pct\":%.1f}",
-        seq, ts, temp, humidity);
+
+int json_serializer(struct wetterdaten* data, char* buffer, size_t len_buffer) {
+    if (buffer == NULL || len_buffer < 120) {
+        printf("Error: Buffer is NULL or size is too small\n");
+        return -1;
+    }
+    else if (data == NULL) {
+        printf("Error: Data is NULL\n");
+        return -2;
+    }
+    snprintf(buffer, len_buffer, "{\"message id\": %d, \"timestamp\": \"%s\", \"station\": \"%s\", \"temperature\": %.1f, \"humidity\": %.1f}", data->message_id, data->timestamp, data->station_id, data->temperature_c, data->humidity_pct);
+    return 1;
 }
 
-/* Callback: called when connection is established */
+
 static void on_connect(struct mosquitto *mosq, void *userdata, int rc) {
     if (rc == 0) {
         printf("[publisher] Connected to %s:%d\n", BROKER, PORT);
@@ -52,7 +57,13 @@ static void on_publish(struct mosquitto *mosq, void *userdata, int mid) {
     printf("[publisher] Message %d delivered to broker\n", mid);
 }
 
-int main(void) {
+
+int mqtt_connect_and_publish(char* topic, int port, const char* host, struct wetterdaten data) {
+    if (host == NULL || topic == NULL) {
+        printf("Error: Broker or Topic is NULL\n");
+        return -1;
+    }
+    
     srand((unsigned int)time(NULL));
 
     mosquitto_lib_init();
@@ -67,7 +78,7 @@ int main(void) {
     mosquitto_connect_callback_set(mosq, on_connect);
     mosquitto_publish_callback_set(mosq, on_publish);
 
-    int rc = mosquitto_connect(mosq, BROKER, PORT, 60);
+    int rc = mosquitto_connect(mosq, host, port, 60);
     if (rc != MOSQ_ERR_SUCCESS) {
         fprintf(stderr, "[publisher] Could not connect: %s\n",
                 mosquitto_strerror(rc));
@@ -80,13 +91,13 @@ int main(void) {
     mosquitto_loop_start(mosq);
 
     char payload[256];
-    printf("[publisher] Sending %d messages to topic: %s\n\n", MSG_COUNT, TOPIC);
+    printf("[publisher] Sending %d messages to topic: %s\n\n", MSG_COUNT, topic);
 
     for (int i = 1; i <= MSG_COUNT; i++) {
-        build_payload(payload, sizeof(payload), i);
+        json_serializer(&data, payload, sizeof(payload));
         printf("[publisher] Publishing: %s\n", payload);
 
-        rc = mosquitto_publish(mosq, NULL, TOPIC,
+        rc = mosquitto_publish(mosq, NULL, topic,
                                (int)strlen(payload), payload, 1, false);
         if (rc != MOSQ_ERR_SUCCESS) {
             fprintf(stderr, "[publisher] Publish error: %s\n",
@@ -102,3 +113,9 @@ int main(void) {
     mosquitto_lib_cleanup();
     return 0;
 }
+
+
+int main(void) {
+    mqtt_connect_and_publish(TOPIC, PORT, BROKER, data1);
+    return 0;
+    }
