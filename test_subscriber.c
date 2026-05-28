@@ -11,7 +11,7 @@
 
 #define BROKER  "127.0.0.1"
 #define PORT    1883
-#define TOPIC   "mqtt-lab/test/sensor"
+#define TOPIC   "campus/S1/environment"
 
 static int msg_count = 0;
 
